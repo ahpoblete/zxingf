@@ -1,0 +1,73 @@
+import java.util.Properties
+
+plugins {
+  id 'com.android.application'
+}
+
+// Release signing comes from keystore.properties (gitignored, never committed) or,
+// for CI, from KEYSTORE_* environment variables. Neither is required for a debug build.
+def keystorePropertiesFile = file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+  keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+def hasReleaseSigning = keystorePropertiesFile.exists() || System.getenv('KEYSTORE_FILE') != null
+
+android {
+  namespace 'com.google.zxing.client.android'
+  compileSdk 34
+
+  defaultConfig {
+    applicationId 'mx.tegu.forks.zxing.client.android'
+    minSdk 19
+    targetSdk 34
+    versionCode 108
+    versionName '4.7.8'
+  }
+
+  sourceSets {
+    main {
+      manifest.srcFile 'AndroidManifest.xml'
+      java.srcDirs = ['src']
+      res.srcDirs = ['res']
+      assets.srcDirs = ['assets']
+    }
+  }
+
+  if (hasReleaseSigning) {
+    signingConfigs {
+      release {
+        storeFile file(keystoreProperties.getProperty('storeFile') ?: System.getenv('KEYSTORE_FILE'))
+        storePassword keystoreProperties.getProperty('storePassword') ?: System.getenv('KEYSTORE_STORE_PASSWORD')
+        keyAlias keystoreProperties.getProperty('keyAlias') ?: System.getenv('KEYSTORE_KEY_ALIAS')
+        keyPassword keystoreProperties.getProperty('keyPassword') ?: System.getenv('KEYSTORE_KEY_PASSWORD')
+      }
+    }
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled true
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard.cfg'
+      if (hasReleaseSigning) {
+        signingConfig signingConfigs.release
+      }
+    }
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+
+  lint {
+    abortOnError false
+  }
+}
+
+dependencies {
+  implementation 'com.google.zxing:core:3.3.3'
+  implementation project(':android-core')
+  implementation project(':android-integration')
+  implementation 'androidx.core:core:1.13.1'
+}

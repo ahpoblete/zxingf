@@ -31,9 +31,9 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -295,8 +295,8 @@ public final class HistoryManager {
     }
   }
 
-  static Uri saveHistory(String history) {
-    File bsRoot = new File(Environment.getExternalStorageDirectory(), "BarcodeScanner");
+  Uri saveHistory(String history) {
+    File bsRoot = new File(activity.getExternalFilesDir(null), "BarcodeScanner");
     File historyRoot = new File(bsRoot, "History");
     if (!historyRoot.mkdirs() && !historyRoot.isDirectory()) {
       Log.w(TAG, "Couldn't make dir " + historyRoot);
@@ -305,7 +305,7 @@ public final class HistoryManager {
     File historyFile = new File(historyRoot, "history-" + System.currentTimeMillis() + ".csv");
     try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(historyFile), StandardCharsets.UTF_8)) {
       out.write(history);
-      return Uri.parse("file://" + historyFile.getAbsolutePath());
+      return FileProvider.getUriForFile(activity, activity.getPackageName() + ".fileprovider", historyFile);
     } catch (IOException ioe) {
       Log.w(TAG, "Couldn't access file " + historyFile + " due to " + ioe);
       return null;

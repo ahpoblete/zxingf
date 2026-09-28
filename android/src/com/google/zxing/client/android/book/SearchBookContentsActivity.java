@@ -174,9 +174,9 @@ public final class SearchBookContentsActivity extends Activity {
         if (LocaleManager.isBookSearchUrl(theIsbn)) {
           int equals = theIsbn.indexOf('=');
           String volumeId = theIsbn.substring(equals + 1);
-          uri = "http://www.google.com/books?id=" + volumeId + "&jscmd=SearchWithinVolume2&q=" + theQuery;
+          uri = "https://www.google.com/books?id=" + volumeId + "&jscmd=SearchWithinVolume2&q=" + theQuery;
         } else {
-          uri = "http://www.google.com/books?vid=isbn" + theIsbn + "&jscmd=SearchWithinVolume2&q=" + theQuery;
+          uri = "https://www.google.com/books?vid=isbn" + theIsbn + "&jscmd=SearchWithinVolume2&q=" + theQuery;
         }
         CharSequence content = HttpHelper.downloadViaHttp(uri, HttpHelper.ContentType.JSON);
         return new JSONObject(content.toString());

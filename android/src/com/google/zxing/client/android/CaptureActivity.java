@@ -32,17 +32,20 @@ import com.google.zxing.client.android.result.ResultHandlerFactory;
 import com.google.zxing.client.android.result.supplement.SupplementalInfoRetriever;
 import com.google.zxing.client.android.share.ShareActivity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -143,10 +146,35 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
   }
 
+  private static final int PERMISSION_REQUEST_CAMERA = 1;
+
   @Override
   protected void onResume() {
     super.onResume();
-    
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+        && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+      requestPermissions(new String[] {Manifest.permission.CAMERA}, PERMISSION_REQUEST_CAMERA);
+      return;
+    }
+
+    resumeScan();
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    if (requestCode == PERMISSION_REQUEST_CAMERA) {
+      if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        resumeScan();
+      } else {
+        finish();
+      }
+    } else {
+      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+  }
+
+  private void resumeScan() {
     // historyManager must be initialized here to update the history preference
     historyManager = new HistoryManager(this);
     historyManager.trimHistory();
@@ -306,7 +334,9 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     inactivityTimer.onPause();
     ambientLightManager.stop();
     beepManager.close();
-    cameraManager.closeDriver();
+    if (cameraManager != null) {
+      cameraManager.closeDriver();
+    }
     //historyManager = null; // Keep for onActivityResult
     if (!hasSurface) {
       SurfaceView surfaceView = (SurfaceView) findViewById(R.id.preview_view);
@@ -342,10 +372,14 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         return true;
       // Use volume up/down to turn on light
       case KeyEvent.KEYCODE_VOLUME_DOWN:
-        cameraManager.setTorch(false);
+        if (cameraManager != null) {
+          cameraManager.setTorch(false);
+        }
         return true;
       case KeyEvent.KEYCODE_VOLUME_UP:
-        cameraManager.setTorch(true);
+        if (cameraManager != null) {
+          cameraManager.setTorch(true);
+        }
         return true;
     }
     return super.onKeyDown(keyCode, event);
@@ -362,25 +396,21 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   public boolean onOptionsItemSelected(MenuItem item) {
     Intent intent = new Intent(Intent.ACTION_VIEW);
     intent.addFlags(Intents.FLAG_NEW_DOC);
-    switch (item.getItemId()) {
-      case R.id.menu_share:
-        intent.setClassName(this, ShareActivity.class.getName());
-        startActivity(intent);
-        break;
-      case R.id.menu_history:
-        intent.setClassName(this, HistoryActivity.class.getName());
-        startActivityForResult(intent, HISTORY_REQUEST_CODE);
-        break;
-      case R.id.menu_settings:
-        intent.setClassName(this, PreferencesActivity.class.getName());
-        startActivity(intent);
-        break;
-      case R.id.menu_help:
-        intent.setClassName(this, HelpActivity.class.getName());
-        startActivity(intent);
-        break;
-      default:
-        return super.onOptionsItemSelected(item);
+    int itemId = item.getItemId();
+    if (itemId == R.id.menu_share) {
+      intent.setClassName(this, ShareActivity.class.getName());
+      startActivity(intent);
+    } else if (itemId == R.id.menu_history) {
+      intent.setClassName(this, HistoryActivity.class.getName());
+      startActivityForResult(intent, HISTORY_REQUEST_CODE);
+    } else if (itemId == R.id.menu_settings) {
+      intent.setClassName(this, PreferencesActivity.class.getName());
+      startActivity(intent);
+    } else if (itemId == R.id.menu_help) {
+      intent.setClassName(this, HelpActivity.class.getName());
+      startActivity(intent);
+    } else {
+      return super.onOptionsItemSelected(item);
     }
     return true;
   }

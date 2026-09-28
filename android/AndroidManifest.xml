@@ -15,9 +15,7 @@
  limitations under the License.
  -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.google.zxing.client.android"
-          android:versionName="4.7.8"
-          android:versionCode="108"
+          xmlns:tools="http://schemas.android.com/tools"
           android:installLocation="auto">
 
   <uses-permission android:name="android.permission.CAMERA"/>
@@ -27,11 +25,11 @@
   <uses-permission android:name="android.permission.READ_CONTACTS"/>
   <!-- unavailable in API 23 -->
   <uses-permission android:name="com.android.browser.permission.READ_HISTORY_BOOKMARKS"/>
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
   <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
   <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
-
-  <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="22"/>
+  <!-- Needed so the app can still list all installed apps to share to, as it always has -->
+  <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission"/>
 
   <uses-feature android:name="android.hardware.camera.any"/>
   <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
@@ -43,6 +41,17 @@
                android:logo="@drawable/launcher_icon"
                android:label="@string/app_name"
                android:allowBackup="true">
+
+    <provider
+        android:name="androidx.core.content.FileProvider"
+        android:authorities="${applicationId}.fileprovider"
+        android:exported="false"
+        android:grantUriPermissions="true">
+      <meta-data
+          android:name="android.support.FILE_PROVIDER_PATHS"
+          android:resource="@xml/file_paths"/>
+    </provider>
+
     <activity android:name=".CaptureActivity"
               android:screenOrientation="sensorLandscape"
               android:clearTaskOnLaunch="true"
