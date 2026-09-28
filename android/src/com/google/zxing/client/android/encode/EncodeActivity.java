@@ -32,12 +32,12 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
+import androidx.core.content.FileProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -137,7 +137,7 @@ public final class EncodeActivity extends Activity {
       return;
     }
 
-    File bsRoot = new File(Environment.getExternalStorageDirectory(), "BarcodeScanner");
+    File bsRoot = new File(getExternalFilesDir(null), "BarcodeScanner");
     File barcodesRoot = new File(bsRoot, "Barcodes");
     if (!barcodesRoot.exists() && !barcodesRoot.mkdirs()) {
       Log.w(TAG, "Couldn't make dir " + barcodesRoot);
@@ -153,12 +153,14 @@ public final class EncodeActivity extends Activity {
       return;
     }
 
+    Uri barcodeUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", barcodeFile);
     Intent intent = new Intent(Intent.ACTION_SEND, Uri.parse("mailto:"));
     intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name) + " - " + encoder.getTitle());
     intent.putExtra(Intent.EXTRA_TEXT, contents);
-    intent.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://" + barcodeFile.getAbsolutePath()));
+    intent.putExtra(Intent.EXTRA_STREAM, barcodeUri);
     intent.setType("image/png");
     intent.addFlags(Intents.FLAG_NEW_DOC);
+    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
     startActivity(Intent.createChooser(intent, null));
   }
 

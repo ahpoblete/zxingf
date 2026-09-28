@@ -120,7 +120,7 @@ public final class HistoryActivity extends ListActivity {
     switch (item.getItemId()) {
       case R.id.menu_history_send:
         CharSequence history = historyManager.buildHistory();
-        Parcelable historyFile = HistoryManager.saveHistory(history.toString());
+        Parcelable historyFile = historyManager.saveHistory(history.toString());
         if (historyFile == null) {
           AlertDialog.Builder builder = new AlertDialog.Builder(this);
           builder.setMessage(R.string.msg_unmount_usb);
@@ -129,6 +129,7 @@ public final class HistoryActivity extends ListActivity {
         } else {
           Intent intent = new Intent(Intent.ACTION_SEND, Uri.parse("mailto:"));
           intent.addFlags(Intents.FLAG_NEW_DOC);
+          intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
           String subject = getResources().getString(R.string.history_email_title);
           intent.putExtra(Intent.EXTRA_SUBJECT, subject);
           intent.putExtra(Intent.EXTRA_TEXT, subject);
