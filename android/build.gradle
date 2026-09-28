@@ -1,13 +1,24 @@
+import java.util.Properties
+
 plugins {
   id 'com.android.application'
 }
+
+// Release signing comes from keystore.properties (gitignored, never committed) or,
+// for CI, from KEYSTORE_* environment variables. Neither is required for a debug build.
+def keystorePropertiesFile = file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+  keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+def hasReleaseSigning = keystorePropertiesFile.exists() || System.getenv('KEYSTORE_FILE') != null
 
 android {
   namespace 'com.google.zxing.client.android'
   compileSdk 34
 
   defaultConfig {
-    applicationId 'com.google.zxing.client.android'
+    applicationId 'mx.tegu.forks.zxing.client.android'
     minSdk 19
     targetSdk 34
     versionCode 108
@@ -23,10 +34,24 @@ android {
     }
   }
 
+  if (hasReleaseSigning) {
+    signingConfigs {
+      release {
+        storeFile file(keystoreProperties.getProperty('storeFile') ?: System.getenv('KEYSTORE_FILE'))
+        storePassword keystoreProperties.getProperty('storePassword') ?: System.getenv('KEYSTORE_STORE_PASSWORD')
+        keyAlias keystoreProperties.getProperty('keyAlias') ?: System.getenv('KEYSTORE_KEY_ALIAS')
+        keyPassword keystoreProperties.getProperty('keyPassword') ?: System.getenv('KEYSTORE_KEY_PASSWORD')
+      }
+    }
+  }
+
   buildTypes {
     release {
       minifyEnabled true
       proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard.cfg'
+      if (hasReleaseSigning) {
+        signingConfig signingConfigs.release
+      }
     }
   }
 
